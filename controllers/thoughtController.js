@@ -1,41 +1,42 @@
-const { Course, Student } = require('../models');
+const { Thought, User } = require('../models');
 
 module.exports = {
-  // Get all courses
-  async getCourses(req, res) {
+  // Get all thoughts
+  async getThoughts(req, res) {
     try {
-      const courses = await Course.find()
+      const thoughts = await Thought.find()
       .populate('students');
-      res.json(courses);
+      res.json(thoughts);
     } catch (err) {
       res.status(500).json(err);
     }
   },
-  // Get a course
-  async getSingleCourse(req, res) {
+  // Get a thought
+  async getSingleThought(req, res) {
     try {
-      const course = await Course.findOne({ _id: req.params.courseId })
+      const thought = await Thought.findOne({ _id: req.params.thoughtId })
       .populate('students');
 
-      if (!course) {
-        return res.status(404).json({ message: 'No course with that ID' });
+      if (!thought) {
+        return res.status(404).json({ message: 'No thought with that ID' });
       }
 
-      res.json(course);
+      res.json(thought);
     } catch (err) {
       res.status(500).json(err);
     }
   },
-  // Create a course
-  async createCourse(req, res) {
+  // Create a thought
+  async createThought(req, res) {
     try {
-      const course = await Course.create(req.body);
-      res.json(course);
+      const thought = await Thought.create(req.body);
+      res.json(thought);
     } catch (err) {
       console.log(err);
       return res.status(500).json(err);
     }
   },
+  
   // Delete a course
   async deleteCourse(req, res) {
     try {
