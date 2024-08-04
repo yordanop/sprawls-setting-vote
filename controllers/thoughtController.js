@@ -5,17 +5,18 @@ module.exports = {
   async getThoughts(req, res) {
     try {
       const thoughts = await Thought.find()
-      .populate('students');
       res.json(thoughts);
     } catch (err) {
       res.status(500).json(err);
     }
   },
+
   // Get a thought
   async getSingleThought(req, res) {
     try {
       const thought = await Thought.findOne({ _id: req.params.thoughtId })
-      .populate('students');
+        .select('-__v')
+        .lean();
 
       if (!thought) {
         return res.status(404).json({ message: 'No thought with that ID' });
@@ -63,6 +64,39 @@ module.exports = {
       }
 
       res.json(thought);
+    } catch (err) {
+      res.status(500).json(err);
+    }
+  },
+
+  // Add a reaction to a thought
+  async addReaction(req, res) {
+    try {
+
+      const newReaction = await User.findOne({ _id: req.params.friendId })
+        .select('-__v')
+        .lean();
+
+      if (!newReaction) {
+        return res
+          .status(404)
+          .json({ message: 'No user found with that ID :(' })
+      }
+
+
+      const user = await User.findOneAndUpdate(
+        { _id: req.params.userId },
+        { $addToSet: { friends: newReaction } },
+        { runValidators: true, new: true }
+      );
+
+      if (!user) {
+        return res
+          .status(404)
+          .json({ message: 'No user found with that ID :(' })
+      }
+
+      res.json(user);
     } catch (err) {
       res.status(500).json(err);
     }

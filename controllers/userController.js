@@ -1,6 +1,6 @@
 // ObjectId() method for converting userId string into an ObjectId for querying database
 const { ObjectId } = require('mongoose').Types;
-const { User } = require('../models');
+const { User, Thought } = require('../models');
 
 // Aggregate function to get the number of users overall
 const userCount = async () => {
@@ -14,7 +14,7 @@ module.exports = {
   // Get all users
   async getUsers(req, res) {
     try {
-      const users = await User.find();
+      const users = await User.find().select('-__v').populate('thoughts');
       const userObj = {
         users,
         userCount: await userCount(),
@@ -31,15 +31,14 @@ module.exports = {
     try {
       const user = await User.findOne({ _id: req.params.userId })
         .select('-__v')
-        .lean();
+        .populate('thoughts');
 
       if (!user) {
         return res.status(404).json({ message: 'No user with that ID' });
       }
 
       res.json({
-        user,
-        grade: await grade(req.params.userId),
+        user
       });
     } catch (err) {
       console.log(err);
@@ -59,7 +58,7 @@ module.exports = {
   // Delete a user and remove them from the course
   async deleteUser(req, res) {
     try {
-      const user = await User.findOneAndRemove({ _id: req.params.userId });
+      const user = await User.findOneAndDelete({ _id: req.params.userId });
 
       if (!user) {
         return res.status(404).json({ message: 'No such user exists' })
@@ -74,6 +73,27 @@ module.exports = {
       res.status(500).json(err);
     }
   },
+
+  // Update a user
+  async updateUser(req, res) {
+    try {
+      const user = await User.findOneAndUpdate(
+        { _id: req.params.userId },
+        { $set: req.body },
+        { runValidators: true, new: true }
+      );
+
+      if (!user) {
+        return res.status(404).json({ message: 'No user with this id!' });
+      }
+
+      res.json(user);
+    } catch (err) {
+      res.status(500).json(err);
+    }
+  },
+
+
 
   // Add a friend to a user
   async addFriend(req, res) {
@@ -114,21 +134,19 @@ module.exports = {
   async removeFriend(req, res) {
     try {
 
-      const friend = await User.findOne({ _id: req.params.friendId })
-        .select('-__v')
-        .lean();
+      const oldFriend = await User.findOne({ _id: req.params.friendId });
 
-      if (!friend) {
+      if (!oldFriend) {
         return res
           .status(404)
           .json({ message: 'No friend user found with that ID :(' })
       }
       
-      const user = await User.findOneAndUpdate(
+      const user = await User.findByIdAndUpdate(
         { _id: req.params.userId },
-        { $pull: { friends: { userId: req.params.userId } } },
-        { runValidators: true, new: true }
-      );
+        { $pull: { friends: req.params.friendId } },
+        { new: true }
+      ).populate('friends');
 
       if (!user) {
         return res

@@ -1,0 +1,3 @@
+delete for thoughts keeps the request and breaks but it deletes
+
+dont understand the logic for rections
