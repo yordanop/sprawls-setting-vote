@@ -65,6 +65,9 @@ module.exports = {
         return res.status(404).json({ message: 'No such user exists' })
       }
 
+      // await Student.deleteMany({ _id: { $in: thought.students } });
+      // res.json({ message: 'Course and students deleted!' });
+
       res.json({ message: 'User successfully deleted' });
     } catch (err) {
       console.log(err);
@@ -108,11 +111,22 @@ module.exports = {
   },
 
   // Remove assignment from a user
-  async removeAssignment(req, res) {
+  async removeFriend(req, res) {
     try {
+
+      const friend = await User.findOne({ _id: req.params.friendId })
+        .select('-__v')
+        .lean();
+
+      if (!friend) {
+        return res
+          .status(404)
+          .json({ message: 'No friend user found with that ID :(' })
+      }
+      
       const user = await User.findOneAndUpdate(
         { _id: req.params.userId },
-        { $pull: { assignment: { assignmentId: req.params.assignmentId } } },
+        { $pull: { friends: { userId: req.params.userId } } },
         { runValidators: true, new: true }
       );
 
