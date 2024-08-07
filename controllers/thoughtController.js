@@ -1,4 +1,4 @@
-const { Thought, User } = require('../models');
+const { Thought, Reaction } = require('../models');
 
 module.exports = {
   // Get all thoughts
@@ -46,6 +46,8 @@ module.exports = {
       if (!thought) {
         return res.status(404).json({ message: 'No thought with that ID' });
       }
+
+      return res.json({ message: 'Thought deleted succesfully'});
     } catch (err) {
       res.status(500).json(err);
     }
@@ -70,33 +72,44 @@ module.exports = {
   },
 
   // Add a reaction to a thought
-  async addReaction(req, res) {
+  async createReaction(req, res) {
     try {
-
-      const newReaction = await User.findOne({ _id: req.params.friendId })
-        .select('-__v')
-        .lean();
-
-      if (!newReaction) {
-        return res
-          .status(404)
-          .json({ message: 'No user found with that ID :(' })
-      }
-
-
-      const user = await User.findOneAndUpdate(
-        { _id: req.params.userId },
-        { $addToSet: { friends: newReaction } },
+      const thought = await Thought.findOneAndUpdate(
+        { _id: req.params.thoughtId },
+        { $addToSet: { reactions: req.body } },
         { runValidators: true, new: true }
       );
 
-      if (!user) {
+      if (!thought) {
         return res
           .status(404)
-          .json({ message: 'No user found with that ID :(' })
+          .json({ message: 'No thought found with that ID :(' })
       }
 
-      res.json(user);
+      res.json(thought);
+    } catch (err) {
+      res.status(500).json(err);
+    }
+  },
+
+  // Delete a reaction from a thought
+  async deleteReaction(req, res) {
+    try {
+      
+      const thought = await Thought.findByIdAndUpdate(
+        { _id: req.params.thoughtId },
+        { $pull: { reactions: { reactionId: req.params.reactionId } } },
+        { new: true }
+      );
+
+      if (!thought) {
+        return res
+          .status(404)
+          .json({ message: 'No thought found with that ID :(' });
+          
+      }
+
+      res.json(thought);
     } catch (err) {
       res.status(500).json(err);
     }

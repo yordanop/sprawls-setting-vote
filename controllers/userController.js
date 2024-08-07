@@ -55,19 +55,21 @@ module.exports = {
       res.status(500).json(err);
     }
   },
-  // Delete a user and remove them from the course
+  // Delete a user 
   async deleteUser(req, res) {
     try {
-      const user = await User.findOneAndDelete({ _id: req.params.userId });
+      const user = await User.findOne({ _id: req.params.userId })
+        .select('-__v');
 
-      if (!user) {
+      await Thought.deleteMany({ _id: { $in: user.thoughts } });
+      // res.json({ message: 'Thoughts deleted!' });
+
+      const userToDelete = await User.findOneAndDelete({ _id: req.params.userId });
+
+      if (!userToDelete) {
         return res.status(404).json({ message: 'No such user exists' })
       }
-
-      // await Student.deleteMany({ _id: { $in: thought.students } });
-      // res.json({ message: 'Course and students deleted!' });
-
-      res.json({ message: 'User successfully deleted' });
+      res.json({ message: 'User and thoughts successfully deleted' });
     } catch (err) {
       console.log(err);
       res.status(500).json(err);
@@ -162,14 +164,3 @@ module.exports = {
 };
 
 
-// const course = await Course.findOneAndUpdate(
-//   { users: req.params.userId },
-//   { $pull: { users: req.params.userId } },
-//   { new: true }
-// );
-
-// if (!course) {
-//   return res.status(404).json({
-//     message: 'User deleted, but no courses found',
-//   });
-// }
